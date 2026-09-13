@@ -1,5 +1,6 @@
 import { categoryColor, categoryLabels } from "@/constants/element-colors";
 import { Colors } from "@/constants/theme-colors";
+import AtomicStructure from "@/components/AtomicStructure";
 import { getElementBySymbol, kelvinToCelsius } from "@/data/elements";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
@@ -63,11 +64,18 @@ export default function ElementDetailScreen() {
         <Text style={styles.backText}>← Back</Text>
       </Pressable>
 
-      <View style={[styles.hero, { backgroundColor: color }]}>
+            <View style={[styles.hero, { backgroundColor: color }]}>
         <Text style={styles.heroNumber}>{element.number}</Text>
         <Text style={styles.heroSymbol}>{element.symbol}</Text>
         <Text style={styles.heroName}>{element.name}</Text>
       </View>
+
+      <AtomicStructure
+        shells={element.shells}
+        protons={element.protons}
+        neutrons={element.neutrons}
+        symbol={element.symbol}
+      />
 
       <View style={styles.table}>
         {rows.map(([label, value]) => (
