@@ -48,9 +48,9 @@ const UserSchema = new mongoose.Schema(
       ref: 'Section',
       default: null,
     },
-    role: {
+      role: {
       type: String,
-      enum: ['teacher', 'student'],
+      enum: ['teacher', 'student', 'personal'],
       required: true,
     },
     section: {

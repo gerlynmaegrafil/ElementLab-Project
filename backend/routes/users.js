@@ -4,7 +4,6 @@ const jwt = require('jsonwebtoken');
 const router = express.Router();
 const User = require('../models/User');
 const Section = require('../models/Section');
-
 const JWT_SECRET = process.env.JWT_SECRET || 'dev-only-secret-change-me';
 const JWT_EXPIRES_IN = '7d';
 
@@ -23,7 +22,7 @@ router.post('/register', async (req, res) => {
       });
     }
 
-    if (!['teacher', 'student'].includes(role)) {
+      if (!['teacher', 'student', 'personal'].includes(role)) {
       return res.status(400).json({ error: 'Invalid role' });
     }
 
