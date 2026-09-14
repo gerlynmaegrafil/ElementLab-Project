@@ -100,20 +100,7 @@ export default function PeriodicTableScreen() {
 
             <CategoryLegend />
 
-      <View style={styles.navButtonsRow}>
-        <Pressable
-          onPress={() => router.push("/compare" as any)}
-          style={styles.navButton}
-        >
-          <Text style={styles.navButtonText}>Compare Elements</Text>
-        </Pressable>
-        <Pressable
-          onPress={() => router.push("/trends" as any)}
-          style={styles.navButton}
-        >
-          <Text style={styles.navButtonText}>Periodic Trends</Text>
-        </Pressable>
-      </View>
+    
 
       <PeriodicTableGrid
         onSelect={handleSelect}
@@ -133,26 +120,6 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     paddingTop: 8,
     paddingBottom: 4,
-  },
-    navButtonsRow: {
-    flexDirection: "row",
-    marginHorizontal: 16,
-    marginBottom: 8,
-    gap: 8,
-  },
-  navButton: {
-    flex: 1,
-    paddingVertical: 10,
-    borderRadius: 8,
-    backgroundColor: Colors.card,
-    borderWidth: 1,
-    borderColor: Colors.border,
-    alignItems: "center",
-  },
-  navButtonText: {
-    color: Colors.cyan,
-    fontSize: 12,
-    fontWeight: "700",
   },
   backBtn: {
     paddingVertical: 6,

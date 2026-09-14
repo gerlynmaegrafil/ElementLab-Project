@@ -19,17 +19,24 @@ import { Colors } from "@/constants/theme-colors";
 import { API_BASE_URL } from "@/lib/api";
 import { getToken, saveSession } from "@/lib/session";
 
+type RoleKey = "teacher" | "student" | "personal";
+
+const ROLES: { key: RoleKey; title: string; subtitle: string }[] = [
+  { key: "student", title: "Student", subtitle: "Log in to your class." },
+  { key: "teacher", title: "Teacher", subtitle: "Manage your sections." },
+  { key: "personal", title: "Personal Account", subtitle: "Just for you." },
+];
+
 export default function LoginScreen() {
   const router = useRouter();
+
+  const [selectedRole, setSelectedRole] = useState<RoleKey | null>(null);
 
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [focusedField, setFocusedField] = useState<string | null>(null);
 
-  // Persistent login: if a session is already saved on this phone
-  // (from a previous login/register), skip the login form entirely
-  // and go straight to /home. Only Logout clears this.
   const [checkingSession, setCheckingSession] = useState(true);
 
   useEffect(() => {
@@ -43,7 +50,6 @@ export default function LoginScreen() {
     })();
   }, []);
 
-  // 1.4 - lock the form out for 1 minute after 3 failed attempts
   const [lockedForSeconds, setLockedForSeconds] = useState<number | null>(null);
 
   const startLockCountdown = (seconds: number) => {
@@ -59,7 +65,6 @@ export default function LoginScreen() {
     }, 1000);
   };
 
-  // 1.3 - do not proceed if a field is empty or invalid
   const validate = () => {
     if (!username.trim() || !password.trim()) {
       Alert.alert("Missing info", "Please enter both username and password.");
@@ -100,10 +105,22 @@ export default function LoginScreen() {
         return;
       }
 
+      // Note: the role picker on this screen is a UI convenience only —
+      // the account's actual role always comes from the backend response.
+      // If someone picks the wrong tile, login still succeeds and routing
+      // below is based on data.user.role, not on selectedRole.
+      if (data.user.role !== selectedRole) {
+        // no hard block — just let them in as their real role
+      }
+
       await saveSession(data.token, data.user);
       setPassword("");
-      // 1.5 - redirect the user to the appropriate screen after login
-      router.replace("/home");
+
+      if (data.user.role === "teacher") {
+        router.replace("/teacher-home");
+      } else {
+        router.replace("/home");
+      }
     } catch (err: any) {
       Alert.alert(
         "Could not log in",
@@ -126,6 +143,46 @@ export default function LoginScreen() {
     );
   }
 
+  // Step 1: role picker, shown before username/password ever appear.
+  if (!selectedRole) {
+    return (
+      <SafeAreaView style={styles.safeArea} edges={["top", "left", "right"]}>
+        <View style={styles.hero}>
+          <Image
+            source={require("@/assets/images/logo.png")}
+            style={styles.logo}
+            resizeMode="contain"
+          />
+          <Text style={styles.header}>Welcome to ElementLab</Text>
+          <Text style={styles.subheader}>Who's logging in?</Text>
+        </View>
+
+        <View style={styles.card}>
+          {ROLES.map((r) => (
+            <TouchableOpacity
+              key={r.key}
+              style={styles.roleCard}
+              onPress={() => setSelectedRole(r.key)}
+            >
+              <Text style={styles.roleTitle}>{r.title}</Text>
+              <Text style={styles.roleSubtitle}>{r.subtitle}</Text>
+            </TouchableOpacity>
+          ))}
+
+          <TouchableOpacity
+            style={styles.linkButton}
+            onPress={() => router.push("/register")}
+          >
+            <Text style={styles.linkText}>
+              Don&apos;t have an account? <Text style={styles.linkTextBold}>Register</Text>
+            </Text>
+          </TouchableOpacity>
+        </View>
+      </SafeAreaView>
+    );
+  }
+
+  // Step 2: username/password, only after a role has been picked.
   return (
     <SafeAreaView style={styles.safeArea} edges={["top", "left", "right"]}>
       <KeyboardAvoidingView
@@ -142,7 +199,9 @@ export default function LoginScreen() {
               style={styles.logo}
               resizeMode="contain"
             />
-            <Text style={styles.header}>Welcome to ElementLab</Text>
+            <Text style={styles.header}>
+              {ROLES.find((r) => r.key === selectedRole)?.title} Login
+            </Text>
             <Text style={styles.subheader}>
               Enter your username and password to continue.
             </Text>
@@ -199,9 +258,21 @@ export default function LoginScreen() {
               )}
             </TouchableOpacity>
 
-            <Text style={styles.hint}>
-              Limit: 3 attempts. Lockout for 1 minute.
-            </Text>
+            <Text style={styles.hint}>Limit: 3 attempts. Lockout for 1 minute.</Text>
+
+            <TouchableOpacity
+              style={styles.linkButton}
+              onPress={() => {
+                setSelectedRole(null);
+                setUsername("");
+                setPassword("");
+              }}
+              disabled={submitting}
+            >
+              <Text style={styles.linkText}>
+                <Text style={styles.linkTextBold}>← Choose a different role</Text>
+              </Text>
+            </TouchableOpacity>
 
             <TouchableOpacity
               style={styles.linkButton}
@@ -209,8 +280,7 @@ export default function LoginScreen() {
               disabled={submitting}
             >
               <Text style={styles.linkText}>
-                Don&apos;t have an account?{" "}
-                <Text style={styles.linkTextBold}>Register</Text>
+                Don&apos;t have an account? <Text style={styles.linkTextBold}>Register</Text>
               </Text>
             </TouchableOpacity>
           </View>
@@ -221,42 +291,18 @@ export default function LoginScreen() {
 }
 
 const styles = StyleSheet.create({
-  safeArea: {
-    flex: 1,
-    backgroundColor: Colors.background,
-  },
+  safeArea: { flex: 1, backgroundColor: Colors.background },
   loadingContainer: {
     flex: 1,
     backgroundColor: Colors.background,
     alignItems: "center",
     justifyContent: "center",
   },
-  container: {
-    flexGrow: 1,
-    paddingBottom: 40,
-  },
-  hero: {
-    alignItems: "center",
-    paddingHorizontal: 24,
-    paddingTop: 36,
-    paddingBottom: 28,
-  },
-  logo: {
-    width: 96,
-    height: 96,
-    marginBottom: 12,
-  },
-  header: {
-    color: Colors.textPrimary,
-    fontSize: 26,
-    fontWeight: "800",
-    marginBottom: 6,
-  },
-  subheader: {
-    color: Colors.textSecondary,
-    fontSize: 14,
-    textAlign: "center",
-  },
+  container: { flexGrow: 1, paddingBottom: 40 },
+  hero: { alignItems: "center", paddingHorizontal: 24, paddingTop: 36, paddingBottom: 28 },
+  logo: { width: 96, height: 96, marginBottom: 12 },
+  header: { color: Colors.textPrimary, fontSize: 26, fontWeight: "800", marginBottom: 6 },
+  subheader: { color: Colors.textSecondary, fontSize: 14, textAlign: "center" },
   card: {
     backgroundColor: Colors.card,
     borderTopLeftRadius: 28,
@@ -268,12 +314,17 @@ const styles = StyleSheet.create({
     paddingTop: 28,
     paddingBottom: 20,
   },
-  label: {
-    fontSize: 13,
-    fontWeight: "600",
-    marginBottom: 6,
-    color: Colors.textSecondary,
+  roleCard: {
+    borderWidth: 1,
+    borderColor: Colors.border,
+    borderRadius: 14,
+    padding: 18,
+    marginBottom: 16,
+    backgroundColor: Colors.inputBackground,
   },
+  roleTitle: { color: Colors.cyan, fontSize: 17, fontWeight: "800", marginBottom: 4 },
+  roleSubtitle: { color: Colors.textSecondary, fontSize: 13 },
+  label: { fontSize: 13, fontWeight: "600", marginBottom: 6, color: Colors.textSecondary },
   input: {
     borderWidth: 1,
     borderColor: Colors.border,
@@ -312,30 +363,10 @@ const styles = StyleSheet.create({
     shadowOffset: { width: 0, height: 0 },
     elevation: 6,
   },
-  buttonDisabled: {
-    opacity: 0.5,
-  },
-  buttonText: {
-    color: Colors.background,
-    fontWeight: "800",
-    fontSize: 16,
-  },
-  hint: {
-    color: Colors.textMuted,
-    fontSize: 12,
-    textAlign: "center",
-    marginTop: 12,
-  },
-  linkButton: {
-    marginTop: 18,
-    alignItems: "center",
-  },
-  linkText: {
-    color: Colors.textSecondary,
-    fontSize: 14,
-  },
-  linkTextBold: {
-    color: Colors.cyan,
-    fontWeight: "700",
-  },
+  buttonDisabled: { opacity: 0.5 },
+  buttonText: { color: Colors.background, fontWeight: "800", fontSize: 16 },
+  hint: { color: Colors.textMuted, fontSize: 12, textAlign: "center", marginTop: 12 },
+  linkButton: { marginTop: 18, alignItems: "center" },
+  linkText: { color: Colors.textSecondary, fontSize: 14 },
+  linkTextBold: { color: Colors.cyan, fontWeight: "700" },
 });

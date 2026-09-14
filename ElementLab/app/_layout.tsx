@@ -15,6 +15,7 @@ export default function RootLayout() {
         <Stack.Screen name="home" options={{ headerShown: false }} />
         <Stack.Screen name="compare" options={{ headerShown: false }} />
         <Stack.Screen name="trends" options={{ headerShown: false }} />
+        <Stack.Screen name="simulator" options={{ headerShown: false }} />
       </Stack>
       <StatusBar style="auto" />
     </ThemeProvider>

@@ -1,8 +1,9 @@
 import { useRouter } from "expo-router";
 import { useEffect, useState } from "react";
 import {
-  ActivityIndicator,
+  Alert,
   Image,
+  Pressable,
   StyleSheet,
   Text,
   TouchableOpacity,
@@ -18,12 +19,13 @@ type QuickAccessItem = {
   icon: string;
   title: string;
   iconBg: string;
+  route?: string;
 };
 
 const QUICK_ACCESS: QuickAccessItem[] = [
-  { icon: "⚛️", title: "Atomic Structure Quiz", iconBg: Colors.green },
-  { icon: "ℹ️", title: "Element Info Challenge", iconBg: Colors.blue },
-  { icon: "📈", title: "Periodic Trends Test", iconBg: Colors.purple },
+  { icon: "🧪", title: "Periodic Table", iconBg: Colors.green, route: "/periodic-table" },
+  { icon: "⚖️", title: "Compare Elements", iconBg: Colors.blue, route: "/compare" },
+  { icon: "📈", title: "Periodic Trends", iconBg: Colors.purple, route: "/trends" },
 ];
 
 export default function HomeScreen() {
@@ -44,7 +46,6 @@ export default function HomeScreen() {
   }, []);
 
   const handleLogout = async () => {
-    // 1.6 - terminate the current session
     try {
       await fetch(`${API_BASE_URL}/api/users/logout`, { method: "POST" });
     } catch {
@@ -54,10 +55,13 @@ export default function HomeScreen() {
     router.replace("/");
   };
 
+  const comingSoon = (feature: string) =>
+    Alert.alert("Coming soon", `${feature} will be available in a later week.`);
+
   if (checking) {
     return (
       <SafeAreaView style={styles.loadingContainer}>
-        <ActivityIndicator color={Colors.cyan} size="large" />
+        <Text style={{ color: Colors.textMuted }}>Loading...</Text>
       </SafeAreaView>
     );
   }
@@ -84,11 +88,21 @@ export default function HomeScreen() {
         </TouchableOpacity>
       </View>
 
-      {/* Quick access cards */}
+      {/* Quick access cards - link to real, built features */}
       <View style={styles.body}>
         {QUICK_ACCESS.map((item) => (
-          <TouchableOpacity key={item.title} style={styles.quickCard}>
-            <View style={[styles.iconBadge, { backgroundColor: item.iconBg }]}>
+          <TouchableOpacity
+            key={item.title}
+            style={styles.quickCard}
+            onPress={() =>
+              item.route
+                ? router.push(item.route as any)
+                : comingSoon(item.title)
+            }
+          >
+            <View
+              style={[styles.iconBadge, { backgroundColor: item.iconBg }]}
+            >
               <Text style={styles.iconBadgeText}>{item.icon}</Text>
             </View>
             <Text style={styles.quickCardTitle}>{item.title}</Text>
@@ -96,52 +110,58 @@ export default function HomeScreen() {
           </TouchableOpacity>
         ))}
 
-        {/* Progress bar */}
+        {/* Progress bar - placeholder until Week 5 quiz scoring is built */}
         <View style={styles.progressTrack}>
           <View style={styles.progressFill} />
         </View>
 
-        <TouchableOpacity style={styles.startButton}>
+        <TouchableOpacity
+          style={styles.startButton}
+          onPress={() => comingSoon("Quizzes")}
+        >
           <Text style={styles.startButtonText}>Start Quiz</Text>
         </TouchableOpacity>
 
-        {/* Recent scores */}
+        {/* Recent scores - placeholder until Week 5/6 tracking is built */}
         <Text style={styles.recentLabel}>Recent Scores:</Text>
         <View style={styles.scoresRow}>
           <View style={styles.scoreCircle}>
-            <Text style={styles.scoreText}>85%</Text>
+            <Text style={styles.scoreText}>—</Text>
           </View>
           <View style={styles.scoreCircle}>
-            <Text style={styles.scoreText}>50%</Text>
+            <Text style={styles.scoreText}>—</Text>
           </View>
         </View>
       </View>
 
-      {/* Bottom nav */}
+      {/* Bottom nav - now functional */}
       <View style={styles.navBar}>
-        <TouchableOpacity style={styles.navItem} onPress={() => {}}>
+        <Pressable style={styles.navItem} onPress={() => router.replace("/home")}>
           <Text style={[styles.navIcon, styles.navIconActive]}>🏠</Text>
           <Text style={styles.navLabelActive}>Home</Text>
-        </TouchableOpacity>
-        <TouchableOpacity
+        </Pressable>
+        <Pressable
           style={styles.navItem}
           onPress={() => router.push("/periodic-table" as any)}
         >
           <Text style={styles.navIcon}>🧪</Text>
           <Text style={styles.navLabel}>Periodic</Text>
-        </TouchableOpacity>
-        <TouchableOpacity style={styles.navItem} onPress={() => {}}>
+        </Pressable>
+        <Pressable
+          style={styles.navItem}
+          onPress={() => router.push("/simulator" as any)}
+        >
           <Text style={styles.navIcon}>⚗️</Text>
           <Text style={styles.navLabel}>Simulator</Text>
-        </TouchableOpacity>
-        <TouchableOpacity style={styles.navItem} onPress={() => {}}>
+        </Pressable>
+        <Pressable style={styles.navItem} onPress={() => comingSoon("Quizzes")}>
           <Text style={styles.navIcon}>📝</Text>
           <Text style={styles.navLabel}>Quiz</Text>
-        </TouchableOpacity>
-        <TouchableOpacity style={styles.navItem} onPress={() => {}}>
+        </Pressable>
+        <Pressable style={styles.navItem} onPress={() => comingSoon("Profile")}>
           <Text style={styles.navIcon}>👤</Text>
           <Text style={styles.navLabel}>Profile</Text>
-        </TouchableOpacity>
+        </Pressable>
       </View>
     </SafeAreaView>
   );
@@ -243,7 +263,7 @@ const styles = StyleSheet.create({
     overflow: "hidden",
   },
   progressFill: {
-    width: "65%",
+    width: "0%",
     height: "100%",
     backgroundColor: Colors.cyan,
     borderRadius: 3,
@@ -277,12 +297,12 @@ const styles = StyleSheet.create({
     height: 52,
     borderRadius: 26,
     borderWidth: 2,
-    borderColor: Colors.cyan,
+    borderColor: Colors.border,
     alignItems: "center",
     justifyContent: "center",
   },
   scoreText: {
-    color: Colors.cyan,
+    color: Colors.textMuted,
     fontSize: 12,
     fontWeight: "800",
   },
