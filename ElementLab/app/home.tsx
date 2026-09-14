@@ -72,7 +72,7 @@ export default function HomeScreen() {
       <View style={styles.header}>
         <View style={styles.headerLeft}>
           <Image
-            source={require("@/assets/images/logo-icon.png")}
+            source={require("@/assets/images/icon.png")}
             style={styles.logo}
             resizeMode="contain"
           />

@@ -1,5 +1,6 @@
+import DateTimePicker from "@react-native-community/datetimepicker";
 import { useRouter } from "expo-router";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import {
   ActivityIndicator,
   Alert,
@@ -14,7 +15,14 @@ import {
   View,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
+import {
+  barangays as fetchBarangays,
+  cities as fetchCities,
+  provinces as fetchProvinces,
+  regions as fetchRegions,
+} from "select-philippines-address";
 
+import AddressSelect, { AddressOption } from "@/components/AddressSelect";
 import { Colors } from "@/constants/theme-colors";
 import { API_BASE_URL } from "@/lib/api";
 import { saveSession } from "@/lib/session";
@@ -23,15 +31,107 @@ export default function RegisterTeacherScreen() {
   const router = useRouter();
 
   const [name, setName] = useState("");
+  const [birthdate, setBirthdate] = useState<Date>(new Date(2000, 0, 1));
+  const [showDatePicker, setShowDatePicker] = useState(false);
+
+  const [allProvinces, setAllProvinces] = useState<AddressOption[]>([]);
+  const [loadingProvinces, setLoadingProvinces] = useState(true);
+  const [selectedProvince, setSelectedProvince] = useState<AddressOption | null>(null);
+  const [availableCities, setAvailableCities] = useState<AddressOption[]>([]);
+  const [loadingCities, setLoadingCities] = useState(false);
+  const [selectedCity, setSelectedCity] = useState<AddressOption | null>(null);
+  const [availableBarangays, setAvailableBarangays] = useState<AddressOption[]>([]);
+  const [loadingBarangays, setLoadingBarangays] = useState(false);
+  const [selectedBarangay, setSelectedBarangay] = useState<AddressOption | null>(null);
+
+  const [street, setStreet] = useState("");
+  const [zipCode, setZipCode] = useState("");
+  const [country, setCountry] = useState("Philippines");
+
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
+
   const [submitting, setSubmitting] = useState(false);
   const [focusedField, setFocusedField] = useState<string | null>(null);
+
+  useEffect(() => {
+    (async () => {
+      try {
+        const allRegions = await fetchRegions();
+        const provincesByRegion = await Promise.all(
+          allRegions.map((r: any) => fetchProvinces(r.region_code))
+        );
+        const flattened: AddressOption[] = provincesByRegion
+          .flat()
+          .map((p: any) => ({ code: p.province_code, label: p.province_name }));
+        flattened.sort((a, b) => a.label.localeCompare(b.label));
+        setAllProvinces(flattened);
+      } catch (e) {
+        console.error("Failed to load provinces", e);
+      } finally {
+        setLoadingProvinces(false);
+      }
+    })();
+  }, []);
+
+  const handleSelectProvince = async (option: AddressOption) => {
+    setSelectedProvince(option);
+    setSelectedCity(null);
+    setSelectedBarangay(null);
+    setAvailableCities([]);
+    setAvailableBarangays([]);
+    setLoadingCities(true);
+    try {
+      const result = await fetchCities(option.code);
+      const mapped: AddressOption[] = result
+        .map((c: any) => ({ code: c.city_code, label: c.city_name }))
+        .sort((a: AddressOption, b: AddressOption) => a.label.localeCompare(b.label));
+      setAvailableCities(mapped);
+    } catch (e) {
+      console.error("Failed to load cities", e);
+    } finally {
+      setLoadingCities(false);
+    }
+  };
+
+  const handleSelectCity = async (option: AddressOption) => {
+    setSelectedCity(option);
+    setSelectedBarangay(null);
+    setAvailableBarangays([]);
+    setLoadingBarangays(true);
+    try {
+      const result = await fetchBarangays(option.code);
+      const mapped: AddressOption[] = result
+        .map((b: any) => ({ code: b.brgy_code, label: b.brgy_name }))
+        .sort((a: AddressOption, b: AddressOption) => a.label.localeCompare(b.label));
+      setAvailableBarangays(mapped);
+    } catch (e) {
+      console.error("Failed to load barangays", e);
+    } finally {
+      setLoadingBarangays(false);
+    }
+  };
+
+  const formatDate = (date: Date) =>
+    date.toLocaleDateString("en-US", { year: "numeric", month: "long", day: "numeric" });
+
+  const onChangeDate = (event: any, selectedDate?: Date) => {
+    setShowDatePicker(Platform.OS === "ios");
+    if (selectedDate) setBirthdate(selectedDate);
+  };
 
   const validate = () => {
     if (!name.trim()) {
       Alert.alert("Missing info", "Please enter your name.");
+      return false;
+    }
+    if (!selectedProvince || !selectedCity || !selectedBarangay) {
+      Alert.alert("Missing info", "Please complete your address.");
+      return false;
+    }
+    if (!street.trim() || !zipCode.trim()) {
+      Alert.alert("Missing info", "Please enter your street and zip code.");
       return false;
     }
     if (!username.trim() || username.trim().length < 3) {
@@ -59,6 +159,15 @@ export default function RegisterTeacherScreen() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           name: name.trim(),
+          birthdate: birthdate.toISOString(),
+          address: {
+            street: street.trim(),
+            barangay: selectedBarangay!.label,
+            city: selectedCity!.label,
+            province: selectedProvince!.label,
+            zipCode: zipCode.trim(),
+            country: country.trim(),
+          },
           username: username.trim(),
           password,
           role: "teacher",
@@ -108,7 +217,7 @@ export default function RegisterTeacherScreen() {
         >
           <View style={styles.hero}>
             <Image
-              source={require("@/assets/images/logo-icon.png")}
+              source={require("@/assets/images/icon.png")}
               style={styles.logo}
               resizeMode="contain"
             />
@@ -119,15 +228,7 @@ export default function RegisterTeacherScreen() {
           </View>
 
           <View style={styles.card}>
-            <Text style={styles.label}>Full Name</Text>
-            <TextInput
-              style={inputStyle("name")}
-              placeholder="Juan Dela Cruz"
-              placeholderTextColor={Colors.textMuted}
-              value={name}
-              onChangeText={setName}
-              {...focusHandlers("name")}
-            />
+            <Text style={styles.sectionHeader}>Account</Text>
 
             <Text style={styles.label}>Username</Text>
             <TextInput
@@ -160,6 +261,95 @@ export default function RegisterTeacherScreen() {
               value={confirmPassword}
               onChangeText={setConfirmPassword}
               {...focusHandlers("confirmPassword")}
+            />
+
+            <Text style={styles.sectionHeader}>Personal Info</Text>
+
+            <Text style={styles.label}>Full Name</Text>
+            <TextInput
+              style={inputStyle("name")}
+              placeholder="Juan Dela Cruz"
+              placeholderTextColor={Colors.textMuted}
+              value={name}
+              onChangeText={setName}
+              {...focusHandlers("name")}
+            />
+
+            <Text style={styles.label}>Birthday</Text>
+            <TouchableOpacity style={styles.input} onPress={() => setShowDatePicker(true)}>
+              <Text style={styles.inputText}>{formatDate(birthdate)}</Text>
+            </TouchableOpacity>
+            {showDatePicker && (
+              <DateTimePicker
+                value={birthdate}
+                mode="date"
+                display={Platform.OS === "ios" ? "spinner" : "calendar"}
+                maximumDate={new Date()}
+                onChange={onChangeDate}
+              />
+            )}
+
+            <Text style={styles.sectionHeader}>Address</Text>
+
+            <AddressSelect
+              label="Province"
+              placeholder="Select a province"
+              loadingLabel="Loading provinces..."
+              value={selectedProvince}
+              options={allProvinces}
+              loading={loadingProvinces}
+              onSelect={handleSelectProvince}
+            />
+
+            <AddressSelect
+              label="City / Municipality"
+              placeholder={selectedProvince ? "Select a city or municipality" : "Select a province first"}
+              loadingLabel="Loading cities..."
+              value={selectedCity}
+              options={availableCities}
+              disabled={!selectedProvince}
+              loading={loadingCities}
+              onSelect={handleSelectCity}
+            />
+
+            <AddressSelect
+              label="Barangay"
+              placeholder={selectedCity ? "Select a barangay" : "Select a city first"}
+              loadingLabel="Loading barangays..."
+              value={selectedBarangay}
+              options={availableBarangays}
+              disabled={!selectedCity}
+              loading={loadingBarangays}
+              onSelect={setSelectedBarangay}
+            />
+
+            <Text style={styles.label}>Street / House No.</Text>
+            <TextInput
+              style={inputStyle("street")}
+              placeholder="123 Rizal St."
+              placeholderTextColor={Colors.textMuted}
+              value={street}
+              onChangeText={setStreet}
+              {...focusHandlers("street")}
+            />
+
+            <Text style={styles.label}>Zip Code</Text>
+            <TextInput
+              style={inputStyle("zipCode")}
+              placeholder="1870"
+              placeholderTextColor={Colors.textMuted}
+              value={zipCode}
+              onChangeText={setZipCode}
+              keyboardType="numeric"
+              {...focusHandlers("zipCode")}
+            />
+
+            <Text style={styles.label}>Country</Text>
+            <TextInput
+              style={inputStyle("country")}
+              value={country}
+              onChangeText={setCountry}
+              {...focusHandlers("country")}
             />
 
             <TouchableOpacity
@@ -208,6 +398,15 @@ const styles = StyleSheet.create({
     paddingTop: 28,
     paddingBottom: 20,
   },
+  sectionHeader: {
+    fontSize: 15,
+    fontWeight: "700",
+    color: Colors.cyan,
+    marginBottom: 14,
+    marginTop: 6,
+    textTransform: "uppercase",
+    letterSpacing: 0.5,
+  },
   label: { fontSize: 13, fontWeight: "600", marginBottom: 6, color: Colors.textSecondary },
   input: {
     borderWidth: 1,
@@ -216,6 +415,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 14,
     paddingVertical: 13,
     marginBottom: 16,
+    justifyContent: "center",
     backgroundColor: Colors.inputBackground,
     color: Colors.textPrimary,
     fontSize: 15,
@@ -228,6 +428,7 @@ const styles = StyleSheet.create({
     shadowOffset: { width: 0, height: 0 },
     elevation: 4,
   },
+  inputText: { color: Colors.textPrimary, fontSize: 15 },
   button: {
     backgroundColor: Colors.cyan,
     borderRadius: 10,

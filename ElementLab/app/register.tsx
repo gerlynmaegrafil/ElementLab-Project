@@ -32,7 +32,7 @@ export default function RegisterChooseRoleScreen() {
     <SafeAreaView style={styles.safeArea} edges={["top", "left", "right"]}>
       <View style={styles.hero}>
         <Image
-          source={require("@/assets/images/logo-icon.png")}
+          source={require("@/assets/images/icon.png")}
           style={styles.logo}
           resizeMode="contain"
         />

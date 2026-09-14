@@ -45,9 +45,7 @@ export default function RegisterStudentScreen() {
   const [selectedCity, setSelectedCity] = useState<AddressOption | null>(
     null
   );
-  const [availableBarangays, setAvailableBarangays] = useState
-    AddressOption[]
-  >([]);
+  const [availableBarangays, setAvailableBarangays] = useState<AddressOption[]>([]);
   const [loadingBarangays, setLoadingBarangays] = useState(false);
 
   const [selectedBarangay, setSelectedBarangay] =
@@ -243,7 +241,7 @@ export default function RegisterStudentScreen() {
         >
           <View style={styles.hero}>
             <Image
-              source={require("@/assets/images/logo-icon.png")}
+              source={require("@/assets/images/icon.png")}
               style={styles.logo}
               resizeMode="contain"
             />
