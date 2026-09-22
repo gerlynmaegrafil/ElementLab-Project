@@ -1,0 +1,35 @@
+{
+  "expo": {
+    "name": "ElementLab",
+    "slug": "ElementLab",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "icon": "./assets/images/icon.png",
+    "scheme": "elementlab",
+    "userInterfaceStyle": "automatic",
+    "ios": {
+      "supportsTablet": true
+    },
+    "android": {
+  "adaptiveIcon": {
+    "backgroundColor": "#E6F4FE",
+    "foregroundImage": "./assets/images/icon.png"
+  },
+  "package": "com.elementlab"
+},
+    "web": {
+      "output": "static",
+      "favicon": "./assets/images/icon.png"
+    },
+    "experiments": {
+      "typedRoutes": true,
+      "reactCompiler": true
+    },
+    "extra": {
+      "router": {},
+      "eas": {
+        "projectId": "b3cc1201-ce9b-40bb-97d9-8fda6dea3914"
+      }
+    }
+  }
+}
