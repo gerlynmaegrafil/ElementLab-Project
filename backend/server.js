@@ -12,7 +12,7 @@ app.use(express.static('public'));
 app.use('/api/users', usersRouter);
 app.use('/api/sections', require('./routes/sections'));
 //app.use('/api/elego', require('./routes/elego'));
-//app.use('/api/elego', require('./routes/elego-bingo'));
+app.use('/api/elego', require('./routes/elego-bingo'));
 
 const PORT = process.env.PORT || 3000;
 const MONGO_URI = process.env.MONGO_URI || 'mongodb://localhost:27017/registration_app';

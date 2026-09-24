@@ -46,14 +46,13 @@ export default function HomeScreen() {
   }, []);
 
   const handleLogout = async () => {
-    try {
-      await fetch(`${API_BASE_URL}/api/users/logout`, { method: "POST" });
-    } catch {
-      // Non-fatal - we still clear the local session below
-    }
-    await clearSession();
-    router.replace("/");
-  };
+  // Clear session muna agad — hindi na maghihintay sa server
+  await clearSession();
+  router.replace("/");
+
+  // Best-effort lang ang pag-notify sa backend, hindi na hinihintay
+  fetch(`${API_BASE_URL}/api/users/logout`, { method: "POST" }).catch(() => {});
+};
 
   const comingSoon = (feature: string) =>
     Alert.alert("Coming soon", `${feature} will be available in a later week.`);

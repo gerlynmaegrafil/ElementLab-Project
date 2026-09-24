@@ -1,13 +1,42 @@
 // ElementLab/app/elego/index.tsx
+// Activity -> EleGO -> START. No role choices: the account decides.
 
 import { useRouter } from "expo-router";
-import { StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import { useEffect, useState } from "react";
+import { ActivityIndicator, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
 import { Colors } from "@/constants/theme-colors";
+import { getUser } from "@/lib/session";
 
-export default function EleGoRoleScreen() {
+export default function EleGoStartScreen() {
   const router = useRouter();
+  const [role, setRole] = useState<string | null>(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    (async () => {
+      try {
+        const user = await getUser();
+        if (!user) {
+          router.replace("/");
+          return;
+        }
+        setRole(user.role ?? null);
+      } catch {
+        router.replace("/");
+        return;
+      }
+      setLoading(false);
+    })();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  const isTeacher = role === "teacher";
+
+  const handleStart = () => {
+    router.push((isTeacher ? "/elego/teacher" : "/elego/student") as any);
+  };
 
   return (
     <SafeAreaView style={styles.safeArea} edges={["top", "left", "right"]}>
@@ -23,45 +52,20 @@ export default function EleGoRoleScreen() {
         <Text style={styles.heroEmoji}>🔴🟡🟢</Text>
         <Text style={styles.heroTitle}>Element BINGO</Text>
         <Text style={styles.heroSubtitle}>
-          One teacher calls out random elements. Students shade the matching
-          symbol on their own card. First full line wins!
+          {isTeacher
+            ? "Open a game for your class, watch your students join, and call the elements."
+            : "Your bingo card is dealt as soon as you start. You'll join your teacher's game automatically."}
         </Text>
       </View>
 
       <View style={styles.body}>
-        <TouchableOpacity
-          style={styles.roleCard}
-          onPress={() => router.push("/elego/teacher" as any)}
-          activeOpacity={0.85}
-        >
-          <View style={[styles.iconBadge, { backgroundColor: Colors.cyan }]}>
-            <Text style={styles.iconBadgeText}>🧑‍🏫</Text>
-          </View>
-          <View style={styles.roleText}>
-            <Text style={styles.roleTitle}>I'm the Teacher</Text>
-            <Text style={styles.roleDescription}>
-              Create a room, spin for random elements, and control the game.
-            </Text>
-          </View>
-          <Text style={styles.chevron}>›</Text>
-        </TouchableOpacity>
-
-        <TouchableOpacity
-          style={styles.roleCard}
-          onPress={() => router.push("/elego/student" as any)}
-          activeOpacity={0.85}
-        >
-          <View style={[styles.iconBadge, { backgroundColor: Colors.green }]}>
-            <Text style={styles.iconBadgeText}>🎓</Text>
-          </View>
-          <View style={styles.roleText}>
-            <Text style={styles.roleTitle}>I'm a Student</Text>
-            <Text style={styles.roleDescription}>
-              Join with the room code your teacher shows and shade your card.
-            </Text>
-          </View>
-          <Text style={styles.chevron}>›</Text>
-        </TouchableOpacity>
+        {loading ? (
+          <ActivityIndicator color={Colors.cyan} size="large" />
+        ) : (
+          <TouchableOpacity style={styles.startButton} onPress={handleStart} activeOpacity={0.85}>
+            <Text style={styles.startButtonText}>START</Text>
+          </TouchableOpacity>
+        )}
       </View>
     </SafeAreaView>
   );
@@ -79,7 +83,7 @@ const styles = StyleSheet.create({
   backBtn: { width: 40, height: 40, alignItems: "center", justifyContent: "center" },
   backText: { color: Colors.textPrimary, fontSize: 26, fontWeight: "600" },
   title: { color: Colors.textPrimary, fontSize: 18, fontWeight: "800" },
-  hero: { alignItems: "center", paddingHorizontal: 24, marginTop: 12, marginBottom: 24 },
+  hero: { alignItems: "center", paddingHorizontal: 24, marginTop: 12, marginBottom: 32 },
   heroEmoji: { fontSize: 30, marginBottom: 10 },
   heroTitle: { color: Colors.textPrimary, fontSize: 20, fontWeight: "800" },
   heroSubtitle: {
@@ -89,27 +93,17 @@ const styles = StyleSheet.create({
     marginTop: 8,
     lineHeight: 19,
   },
-  body: { paddingHorizontal: 20, gap: 12 },
-  roleCard: {
-    flexDirection: "row",
+  body: { paddingHorizontal: 24 },
+  startButton: {
+    backgroundColor: Colors.green,
+    borderRadius: 14,
+    paddingVertical: 18,
     alignItems: "center",
-    backgroundColor: Colors.card,
-    borderWidth: 1,
-    borderColor: Colors.border,
-    borderRadius: 16,
-    padding: 16,
   },
-  iconBadge: {
-    width: 48,
-    height: 48,
-    borderRadius: 12,
-    alignItems: "center",
-    justifyContent: "center",
-    marginRight: 14,
+  startButtonText: {
+    color: Colors.background,
+    fontSize: 17,
+    fontWeight: "900",
+    letterSpacing: 1,
   },
-  iconBadgeText: { fontSize: 22 },
-  roleText: { flex: 1 },
-  roleTitle: { color: Colors.textPrimary, fontSize: 15, fontWeight: "800" },
-  roleDescription: { color: Colors.textSecondary, fontSize: 12, marginTop: 4, lineHeight: 17 },
-  chevron: { color: Colors.textMuted, fontSize: 22, marginLeft: 8 },
 });

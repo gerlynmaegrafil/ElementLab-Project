@@ -9,18 +9,7 @@ export default function RootLayout() {
 
   return (
     <ThemeProvider value={colorScheme === "dark" ? DarkTheme : DefaultTheme}>
-      <Stack>
-        <Stack.Screen name="index" options={{ headerShown: false }} />
-        <Stack.Screen name="register" options={{ headerShown: false }} />
-        <Stack.Screen name="home" options={{ headerShown: false }} />
-        <Stack.Screen name="compare" options={{ headerShown: false }} />
-        <Stack.Screen name="trends" options={{ headerShown: false }} />
-        <Stack.Screen name="simulator" options={{ headerShown: false }} />
-        <Stack.Screen name="activity" options={{ headerShown: false }} />
-        <Stack.Screen name="elego/index" options={{ headerShown: false }} />
-        <Stack.Screen name="elego/teacher" options={{ headerShown: false }} />
-        <Stack.Screen name="elego/student" options={{ headerShown: false }} />   
-      </Stack>
+      <Stack screenOptions={{ headerShown: false }} />
       <StatusBar style="auto" />
     </ThemeProvider>
   );
